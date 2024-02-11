@@ -1,38 +1,40 @@
 import hashlib
 
-class Tree:
-    
-    def __init__(self, hashes, value, root, left=None, right=None):
-        self.root = root
+class Node:
+    def __init__(self, hash_value, value=None, left=None, right=None):
+        self.hash_value = hash_value
         self.value = value
         self.left = left
         self.right = right
         
-    def create_tree(hashes, value):
-        if len(hashes) == 1:
-            return Tree(hashes[0], value[0], hashes[0])
-        else:
-            return Tree(None, value, hash_value("".join(hashes)), create_tree(hashes[:len(hashes)//2], value[:len(value)//2]), create_tree(hashes[len(hashes)//2:], value[len(value)//2:]))
+def create_merkle_tree(hashes, values):
+    if len(hashes) == 1:
+        return Node(hashes[0], values[0])
+    else:
+        return Node(hashlib.sha256("".join(hashes).encode()).hexdigest(), values, create_merkle_tree(hashes[:len(hashes)//2], values[:len(values)//2]), create_merkle_tree(hashes[len(hashes)//2:], values[len(values)//2:]))
         
-    def print_tree(self):
-        if self.left:
-            self.left.print_tree()
-        return print(self.value, self.root)
-        if self.right:
-            self.right.print_tree()
-        
-def hash_value(value):
-    # return hashlib.sha256(value.encode()).hexdigest()
-    return value
+def print_merkle_tree(tree):
+    if tree.left:
+        print_merkle_tree(tree.left)
+    if tree.right:
+        print_merkle_tree(tree.right)
+    print("Hash value:",tree.hash_value, "Transactions:", tree.value)
 
-num = int(input("Enter the number of transactions: "))
-values = []
+
+number_of_transactions = int(input("Enter the number of transactions: "))
+
+transactions = []
 hashes = []
-for i in range(num):
+
+for i in range(number_of_transactions):
     transaction = input("Enter the transaction: ")
-    values.append(transaction)
-    hashes.append(hash_value(transaction))
+    transactions.append(transaction)
+    hashes.append(hashlib.sha256(transaction.encode()).hexdigest())
+    
+if len(transactions) % 2 != 0:
+    transactions.append(transactions[-1])
+    hashes.append(hashes[-1])
+    
+merkle_tree = create_merkle_tree(hashes, transactions)
 
-tree = Tree(hashes, values, hash_value("".join(hashes)))
-
-tree.print_tree()
+print_merkle_tree(merkle_tree)
